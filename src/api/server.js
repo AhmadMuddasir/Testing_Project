@@ -17,7 +17,6 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({
     message: "PDF Marketplace API is running!",
-    timestamp: new Date().toISOString(),
     environment: config.env,
   });
 });
@@ -27,5 +26,5 @@ app.get("/", (req, res) => {
 
 // Start server
 app.listen(config.port, () => {
-  console.log(`server running in${config.port}`);
+  console.log(`server running in ${config.port}`);
 });
