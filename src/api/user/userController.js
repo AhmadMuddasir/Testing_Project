@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
-import userModel from "./userModel";
-import { config } from "../config/config";
+import userModel from "./userModel.js";
+import { config } from "../config/config.js";
 
 const registerUser = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -11,9 +11,9 @@ const registerUser = async (req, res, next) => {
     return next(createHttpError(400, "All fields are required"));
   }
   try {
-    const UserExist = await userModel.findOne({ email });
+    const UserExist = await userModel.findOne({email});
     if (UserExist) {
-      return createHttpError(400, "User already exist login now");
+      return next(createHttpError(400, "User already exist login now"));
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -24,11 +24,11 @@ const registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    const token = jwt.sign({ sub: newUser }, config.jwtsecret, {
+    const token = jwt.sign({ sub: newUser }, config.jwtSecret, {
       expiresIn: "30d",
     });
 
-    res.status(200, {
+    res.status(201).json({
       message: "user registered successfully",
       accessToken: token,
       user: {

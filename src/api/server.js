@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { config } from "./config/config.js";
 import connectDB from "./config/db.js";
+import userRouter from "./user/userRouter.js";
 
 const app = express();
 
@@ -13,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/users", userRouter);
+
 // Test routes
 app.get("/", (req, res) => {
   res.json({
@@ -21,8 +24,9 @@ app.get("/", (req, res) => {
   });
 });
 
-
-
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 // Start server
 app.listen(config.port, () => {
