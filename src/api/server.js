@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "./config/config.js";
 import connectDB from "./config/db.js";
 import userRouter from "./user/userRouter.js";
+import documentRouter from "./document/documentRouter.js";
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/users", userRouter);
+app.use("/api/documents", documentRouter);
+
 
 // Test routes
 app.get("/", (req, res) => {
