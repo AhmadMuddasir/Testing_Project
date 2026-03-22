@@ -18,7 +18,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", userRouter);
 app.use("/api/documents", documentRouter);
 
-
 // Test routes
 app.get("/", (req, res) => {
   res.json({

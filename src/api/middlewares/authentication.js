@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken"
-import { config } from "../config/config"
+import { config } from "../config/config.js"
 import createHttpError from "http-errors"
 const authenticate = (req,res,next)=>{
-     const token = req.header("Authorization")?.replace("Bearer", "");
+     const token = req.header("Authorization")?.replace("Bearer ", "");
      if(!token){
           return next(createHttpError(401,"access token is required"));
      }

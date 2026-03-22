@@ -80,8 +80,8 @@ const uploadDocument = async (req, res, next) => {
 
 const getAllDocuments = async (req, res, next) => {
   try {
-    const allDocument = documentModel.find();
-    res.json(allDocument);
+    const allDocument =await documentModel.find();
+    res.status(200).json(allDocument);
   } catch (error) {
     console.log(error);
   }
@@ -187,11 +187,11 @@ const updateDocument = async (req, res, next) => {
 const getDocumentById = async (req, res, next) => {
   const { id } = req.params;
   try {
-const document = await documentModel
-  .findById(id)
-  .populate("creator_id", "name email");   
-  
-  if (!document) {
+    const document = await documentModel
+      .findById(id)
+      .populate("creator_id", "name email");
+
+    if (!document) {
       return next(createHttpError(404, "document not found"));
     }
 
@@ -262,4 +262,10 @@ const deleteDocument = async (req, res, next) => {
   }
 };
 
-export { uploadDocument, getAllDocuments, updateDocument, deleteDocument,getDocumentById };
+export {
+  uploadDocument,
+  getAllDocuments,
+  updateDocument,
+  deleteDocument,
+  getDocumentById,
+};

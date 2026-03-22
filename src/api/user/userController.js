@@ -11,7 +11,7 @@ const registerUser = async (req, res, next) => {
     return next(createHttpError(400, "All fields are required"));
   }
   try {
-    const UserExist = await userModel.findOne({email});
+    const UserExist = await userModel.findOne({ email });
     if (UserExist) {
       return next(createHttpError(400, "User already exist login now"));
     }
@@ -24,7 +24,7 @@ const registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    const token = jwt.sign({ sub: newUser }, config.jwtSecret, {
+    const token = jwt.sign({ sub: newUser._id.toString() }, config.jwtSecret, {
       expiresIn: "30d",
     });
 
@@ -58,7 +58,7 @@ const loginUser = async (req, res, next) => {
       return next(createHttpError(404, "password not match"));
     }
 
-    const token = jwt.sign({ sub: user._id }, config.jwtSecret, {
+    const token = jwt.sign({ sub: user._id.toString() }, config.jwtSecret, {
       expiresIn: "30d",
     });
 
@@ -77,5 +77,4 @@ const loginUser = async (req, res, next) => {
   }
 };
 
-
-export {registerUser,loginUser};
+export { registerUser, loginUser };
