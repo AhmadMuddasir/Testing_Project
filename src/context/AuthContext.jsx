@@ -1,16 +1,15 @@
 'use client';
 
 import { createContext,useContext,useState,useEffect } from "react";
-import userRouter from "next/navigation";
+import {useRouter} from "next/navigation";
 import { authApi } from "@/lib/api/auth";
-import e from "express";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({children}){
      const [user,setUser] = useState(null);
      const [isLoading,setisLoading] = useState(true);
-     const router = userRouter()
+     const router = useRouter();
 
      useEffect(()=>{
           const token = localStorage.getItem('token')

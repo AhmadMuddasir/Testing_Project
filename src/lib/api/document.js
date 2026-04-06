@@ -2,8 +2,8 @@ import { apiClient } from "./client";
 
 export const documentsApi = {
      getAll:async()=>{
-          const {data} = apiClient.get('/documents');
-          return data;
+          const response = await apiClient.get('/documents');
+          return  response.data;
      },
      getbyId:async(id)=>{
           const {data} = await apiClient.get(`/documents/${id}`);
