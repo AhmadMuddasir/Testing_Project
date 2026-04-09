@@ -80,10 +80,32 @@ const uploadDocument = async (req, res, next) => {
 
 const getAllDocuments = async (req, res, next) => {
   try {
-    const allDocument =await documentModel.find();
-    res.status(200).json(allDocument);
+    // 1. Added .populate to get the name and email from the User model
+    const allDocuments = await documentModel
+      .find()
+      .populate("creator_id", "name email");
+
+    // 2. Map the data so the structure matches getDocumentById 
+    // This ensures the frontend always sees "creator.name" instead of "creator_id.name"
+    const formattedDocuments = allDocuments.map(doc => ({
+      _id: doc._id,
+      title: doc.title,
+      description: doc.description,
+      price: doc.price,
+      imageUrl: doc.imageUrl,
+      pdfUrl: doc.pdfUrl,
+      creator: {
+        id: doc.creator_id?._id,
+        name: doc.creator_id?.name || "Unknown User",
+        email: doc.creator_id?.email,
+      },
+      createdAt: doc.createdAt,
+    }));
+
+    res.status(200).json(formattedDocuments);
   } catch (error) {
     console.log(error);
+    next(error); // Pass error to your error handler
   }
 };
 

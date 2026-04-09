@@ -4,11 +4,13 @@ import Navbar from "@/components/Navbar";
 import DocumentCard from "@/components/DocumentCard";
 import { useEffect, useState } from "react";
 import { documentsApi } from "@/lib/api/document";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
 
   useEffect(() => {
     loadDocuments();
@@ -19,6 +21,7 @@ export default function Home() {
       setLoading(true);
       const data = await documentsApi.getAll();
       setDocuments(data);
+      console.log("data:",data)
     } catch (error) {
       console.error(error.message);
     } finally {

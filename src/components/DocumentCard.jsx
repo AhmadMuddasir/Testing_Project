@@ -3,7 +3,7 @@ import Link from "next/link";
 const DocumentCard = ({ document }) => {
   return (
 <Link
-  href={`/documents/`} // /documents/${document.id}
+  href={`/documents/${document._id}`} // /documents/${document.id}
 >
   <div className="bg-slate-900 border border-cyan-900 rounded-lg overflow-hidden shadow-lg shadow-cyan-900/30 hover:shadow-cyan-500/40 hover:border-cyan-400 transition-all duration-300 cursor-pointer group">
     <img
@@ -19,8 +19,9 @@ const DocumentCard = ({ document }) => {
       </p>
       <div className="flex justify-between items-center pt-4 border-t border-cyan-900/50">
         <span className="font-bold text-lg text-cyan-50 margin bg-cyan-950 px-3 py-1 rounded-md border border-cyan-800">price: Rs {document.price}</span>
-        <span className="font-semibold text-md text-cyan-400">{document.creator?.name}</span>
+        <span className="font-semibold text-md text-cyan-400">creator:{document.creator?.name || "Anonymous"}</span>
       </div>
+        <span className="font-bold text-md padding margin text-white-400">Email: { document.creator?.email || "Anonymous"}</span>
     </div>
   </div>
 </Link>
