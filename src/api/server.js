@@ -4,6 +4,7 @@ import { config } from "./config/config.js";
 import connectDB from "./config/db.js";
 import userRouter from "./user/userRouter.js";
 import documentRouter from "./document/documentRouter.js";
+import purchaseRouter from "./purchase/purchaseRouter.js";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/users", userRouter);
 app.use("/api/documents", documentRouter);
+app.use("/api/purchases",purchaseRouter);
 
 // Test routes
 app.get("/", (req, res) => {
