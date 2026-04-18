@@ -44,7 +44,7 @@ export default function MyDocumentPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-12 max-w-7xl">
-        {/* Header Section */}
+     
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-cyan-900/50 gap-4">
           <h1 className="text-3xl md:text-4xl font-bold text-cyan-300 tracking-tight">
             My Documents

@@ -9,7 +9,7 @@ const purchaseSchema = new mongoose.Schema(
     },
     document_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Document",
+      ref: "Book",
       required: true,
     },
     amount: {

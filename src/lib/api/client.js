@@ -1,5 +1,4 @@
 import axios from "axios";
-import { config } from "dotenv";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:5513/api';
 

@@ -1,9 +1,10 @@
 import createHttpError from "http-errors";
-import crypto from "crypto"
+import crypto from "crypto";
 import purchaseModel from "./purchaseModel.js";
 import razorpayInstance from "../config/razorpay.js";
 import { config } from "../config/config.js";
-import next from "next";
+import documentModel from "../document/documentModel.js";
+
 
 const createOrder = async (req, res, next) => {
   const { documentId } = req.body;
@@ -29,7 +30,9 @@ const createOrder = async (req, res, next) => {
     });
 
     if (existingPurchase) {
-      return next(createHttpError(400, "You have already purchased this document"));
+      return next(
+        createHttpError(400, "You have already purchased this document"),
+      );
     }
 
     // Create Razorpay order
@@ -64,56 +67,73 @@ const createOrder = async (req, res, next) => {
   }
 };
 
-const verifyPayment = async(req,res,next) => {
-  const {razorpay_order_id,razorpay_payment_id,razorpay_signature} = req.body;
+const verifyPayment = async (req, res, next) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   try {
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSign = crypto.createHmac("sha256",config.razorpay_secret)
-    .update(sign.toString()).digest("hex");
-
-    if(razorpay_signature !== expectedSign){
-      return next(createHttpError(400,"Invalid payment signature"));
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return next(createHttpError(400, "Missing payment verification fields"));
     }
 
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", config.razorpay_secret)
+      .update(sign)
+      .digest("hex");
+
+    if (razorpay_signature !== expectedSign) {
+      return next(createHttpError(400, "Invalid payment signature"));
+    }
+    
+
     const purchase = await purchaseModel.findOneAndUpdate(
-      {razorpay_order_id},
+      { razorpay_order_id },
       {
         razorpay_payment_id,
         razorpay_signature,
-        status:"success"
+        status: "success",
       },
-      {new:true}
-    ).populate("document_id","title pdfUrl");
+     { returnDocument: 'after' }
+    ).populate("document_id", "title pdfUrl");
+
+    if (!purchase) {
+      return next(createHttpError(404, "Purchase order not found"));
+    }
+
+    // Check if populate worked
+    if (!purchase.document_id) {
+      console.error("Document not found for purchase:", purchase._id);
+      return next(createHttpError(500, "Associated document not found"));
+    }
 
     res.status(200).json({
-      message:"payment verified successfully",
-      purchase:{
-        id:purchase._id,
-        documentTitle:purchase.document_id.title,
-        pdfUrl:purchase.document_id.pdfUrl,
-        amount:purchase.amount,
+      message: "payment verified successfully",
+      purchase: {
+        id: purchase._id,
+        documentTitle: purchase.document_id.title,
+        pdfUrl: purchase.document_id.pdfUrl,
+        amount: purchase.amount,
       },
-    })
-
+    });
   } catch (error) {
     console.error("Verify payment error:", error);
     return next(createHttpError(500, "Failed to verify payment"));
   }
+};
 
-}
-
-const getMyPurchases = async (req,res,next) =>{
+const getMyPurchases = async (req, res, next) => {
   try {
+    console.log("purchaseModel:",purchaseModel)
     const purchases = await purchaseModel
-    .find({buyer_id:req.userId,status:"success"})
-    .populate("document_id","title description imageUrl pdfUrl price")
-    .sort({ createdAt: -1 }).lean();
+      .find({ buyer_id: req.userId, status: "success" })
+      .populate("document_id", "title description imageUrl pdfUrl price")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
-      count:purchases.length,
-      purchases:purchases.map((p)=>({
-        id:p.id,
+      count: purchases.length,
+      purchases: purchases.map((p) => ({
+        id: p.id,
         document: {
           id: p.document_id._id,
           title: p.document_id.title,
@@ -122,34 +142,32 @@ const getMyPurchases = async (req,res,next) =>{
           pdfUrl: p.document_id.pdfUrl,
           price: p.document_id.price,
         },
-        amount:p.amount,
-        purchasedAt:p.createdAt,
-      }))
-
-    })
-
+        amount: p.amount,
+        purchasedAt: p.createdAt,
+      })),
+    });
   } catch (error) {
     console.error("Get purchases error:", error);
     return next(createHttpError(500, "Failed to fetch purchases"));
   }
-}
+};
 
-const CheckPurchase = async (req,res,next) =>{
-    const { documentId } = req.params;
+const CheckPurchase = async (req, res, next) => {
+  const { documentId } = req.params;
 
-    try {
-      const purchase = await purchaseModel.findOne({
+  try {
+    const purchase = await purchaseModel.findOne({
       buyer_id: req.userId,
       document_id: documentId,
       status: "success",
     });
-      res.status(200).json({
+    res.status(200).json({
       hasPurchased: !!purchase,
     });
-    } catch (error) {
-      console.error("Check purchase error:", error);
+  } catch (error) {
+    console.error("Check purchase error:", error);
     return next(createHttpError(500, "Failed to check purchase"));
-    }
-}
+  }
+};
 
-export {createOrder,verifyPayment,getMyPurchases,CheckPurchase};
+export { createOrder, verifyPayment, getMyPurchases, CheckPurchase };

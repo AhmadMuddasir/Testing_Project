@@ -5,19 +5,30 @@ import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import { documentsApi } from "@/lib/api/document";
+import { purchasesApi } from "@/lib/api/purchases";
+import { useRazorpay } from "@/hooks/useRazorpay";
+
 
 export default function DocumentDetailPage() {
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [purchasing,setPurchasing] = useState(false);
+  const [hasPurchased,setHasPurchased] = useState(false);
+
 
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const isRazorpayLoaded = useRazorpay();
+  console.log(isRazorpayLoaded)
 
   useEffect(() => {
     loadDocument();
+    if(user){
+       checkIfPurchased();
+    }
   }, [params.id]);
 
   const loadDocument = async () => {
@@ -34,6 +45,16 @@ export default function DocumentDetailPage() {
     }
   };
 
+  const checkIfPurchased = async() =>{
+    try {
+      const data = await purchasesApi.checkPurchases(params.id);
+      const fetcheddata= data.hasPurchased;
+      setHasPurchased(fetcheddata);
+    } catch (error) {
+      console.error('Check purchase error:', err);
+    }
+  }
+
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this document?")) {
       return;
@@ -48,9 +69,87 @@ export default function DocumentDetailPage() {
     }
   };
 
-  const handleBuy = () => {
-    alert("Payment integration coming soon");
+  const handleBuyNow = async () => {
+    console.log("111")
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!isRazorpayLoaded) {
+      console.log("razorpay is not loading");
+      return;
+    }
+
+    setPurchasing(true);
+    console.log(purchasing)
+
+    try {
+      // Step 1: Create order
+      console.log("inside trycatch")
+      const orderData = await purchasesApi.createOrder(params.id);
+      console.log("Order data",orderData)
+
+      // Step 2: Open Razorpay payment modal
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'PDF Marketplace',
+        description: orderData.documentTitle,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          // Step 3: Verify payment
+          try {
+            const verifyData = await purchasesApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            alert('Payment successful! You can now download the document.');
+            setHasPurchased(true);
+            
+            // Open PDF in new tab
+            window.open(verifyData.purchase.pdfUrl, '_blank');
+            
+            // Redirect to purchases page
+            setTimeout(() => {
+              router.push('/purchases');
+            }, 2000);
+          } catch (err) {
+            console.log(error)
+            console.log(err)
+          }
+        },
+
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: {
+          color: '#2563eb',
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      
+      razorpay.on('payment.failed', function (response) {
+        alert('Payment failed. Please try again.');
+        setPurchasing(false);
+      });
+
+      razorpay.open();
+      setPurchasing(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to initiate payment');
+      setPurchasing(false);
+    }
   };
+
+  const handleDownload = ()=>{
+    window.open(document.pdfUrl,'_blank');
+  }
 
   if (loading) {
     return (
@@ -127,6 +226,13 @@ export default function DocumentDetailPage() {
               </p>
             </div>
 
+              {/* Purchase Status Badge */}
+            {hasPurchased && (
+              <div className="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                ✓ You have purchased this document
+              </div>
+            )}
+
             {/* Description Section */}
             <div className="mb-10">
               <h2 className="text-xl font-semibold text-cyan-400 mb-4 flex items-center gap-2">
@@ -156,16 +262,27 @@ export default function DocumentDetailPage() {
                     {deleting ? "Deleting..." : "Delete Document"}
                   </button>
                 </>
+              ): hasPurchased ? (
+                // Already Purchased - Show Download Button
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold text-lg"
+                >
+                  📥 Download PDF
+                </button>
               ) : (
                 <>
                   {user ? (
+                    <>
+                    <p className="text-sm">Use Netbanking or wallet</p>
                     <button
-                      onClick={handleBuy}
+                      onClick={handleBuyNow}
                       className="flex-1 bg-cyan-600 text-white py-4 rounded-lg hover:bg-cyan-500 font-bold text-lg shadow-lg shadow-cyan-900/30 transition-all duration-300 border border-cyan-500 flex justify-center items-center gap-2"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                      Buy Now - ₹{document.price}
+                      Buy Now  - ₹{document.price}
                     </button>
+                    </>
                   ) : (
                     <button
                       onClick={() => router.push("/login")}

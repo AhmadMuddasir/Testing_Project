@@ -12,11 +12,11 @@ import authenticate from "../middlewares/authentication.js";
 
 const purchaseRouter = express.Router();
 
-app.post("/create-order", authenticate, createOrder);
+purchaseRouter.post("/create-order", authenticate, createOrder);
 
 purchaseRouter.post("/verify", authenticate, verifyPayment);
 
-purchaseRouter.get("my-purchase", authenticate, getMyPurchases);
+purchaseRouter.get("/my-purchases", authenticate, getMyPurchases);
 
 purchaseRouter.get("/check/:documentId", authenticate, CheckPurchase);
 
